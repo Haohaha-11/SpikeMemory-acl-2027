@@ -1,0 +1,21 @@
+{
+  "e0_n": 2417,
+  "e1_settings": 10,
+  "e1_graph_cells": 60,
+  "e1_graph_rows": 145020,
+  "e1_rag_rows": 290040,
+  "e1_rag_method_k_order_cells": 300,
+  "e3_rows": 21753,
+  "e4_settings": 10,
+  "e5_rho": 4,
+  "e6_n": 800,
+  "e7_methods": 25,
+  "e8_settings": 3,
+  "e9_n": 2417,
+  "e10_mismatches": 0,
+  "e11_settings": 10,
+  "e12_settings": 10,
+  "result_index_numbers": 19875,
+  "paper_occurrences": 213,
+  "summary_files": 12
+}

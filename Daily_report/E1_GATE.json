@@ -1,0 +1,306 @@
+{
+  "cells": 35,
+  "passed": 33,
+  "failed": [
+    {
+      "setting": "diag=.3",
+      "method": "SpikeMem",
+      "old_strict": 0.6379809681423252,
+      "new_strict": 0.6352916839056681,
+      "abs_delta": 0.0026892842366570413,
+      "pass": false
+    },
+    {
+      "setting": "clean",
+      "method": "bm25_k8",
+      "old_strict": 0.2286,
+      "new_strict": 0.2341745966073645,
+      "abs_delta": 0.005574596607364507,
+      "pass": false
+    }
+  ],
+  "max_abs_delta": 0.005574596607364507,
+  "checks": [
+    {
+      "setting": "clean",
+      "method": "SpikeMem",
+      "old_strict": 0.6855606123293339,
+      "new_strict": 0.6855606123293339,
+      "abs_delta": 0.0,
+      "pass": true
+    },
+    {
+      "setting": "clean",
+      "method": "TKG_hard",
+      "old_strict": 0.6855606123293339,
+      "new_strict": 0.6855606123293339,
+      "abs_delta": 0.0,
+      "pass": true
+    },
+    {
+      "setting": "clean",
+      "method": "TKG_soft",
+      "old_strict": 0.6243276789408357,
+      "new_strict": 0.6241208109226314,
+      "abs_delta": 0.00020686801820435363,
+      "pass": true
+    },
+    {
+      "setting": "FP=.1",
+      "method": "SpikeMem",
+      "old_strict": 0.6756309474555233,
+      "new_strict": 0.675424079437319,
+      "abs_delta": 0.00020686801820435363,
+      "pass": true
+    },
+    {
+      "setting": "FP=.1",
+      "method": "TKG_hard",
+      "old_strict": 0.634671079851055,
+      "new_strict": 0.634671079851055,
+      "abs_delta": 0.0,
+      "pass": true
+    },
+    {
+      "setting": "FP=.1",
+      "method": "TKG_soft",
+      "old_strict": 0.6055026892842367,
+      "new_strict": 0.6059164253206454,
+      "abs_delta": 0.00041373603640870726,
+      "pass": true
+    },
+    {
+      "setting": "FP=.2",
+      "method": "SpikeMem",
+      "old_strict": 0.6663218866363261,
+      "new_strict": 0.6659081505999173,
+      "abs_delta": 0.0004137360364088183,
+      "pass": true
+    },
+    {
+      "setting": "FP=.2",
+      "method": "TKG_hard",
+      "old_strict": 0.5924700041373604,
+      "new_strict": 0.5924700041373604,
+      "abs_delta": 0.0,
+      "pass": true
+    },
+    {
+      "setting": "FP=.2",
+      "method": "TKG_soft",
+      "old_strict": 0.5904013239553165,
+      "new_strict": 0.5910219280099297,
+      "abs_delta": 0.0006206040546131719,
+      "pass": true
+    },
+    {
+      "setting": "FP=.3",
+      "method": "SpikeMem",
+      "old_strict": 0.6565990897807199,
+      "new_strict": 0.6557716177079024,
+      "abs_delta": 0.0008274720728175256,
+      "pass": true
+    },
+    {
+      "setting": "FP=.3",
+      "method": "TKG_hard",
+      "old_strict": 0.5444766239139429,
+      "new_strict": 0.5444766239139429,
+      "abs_delta": 0.0,
+      "pass": true
+    },
+    {
+      "setting": "FP=.3",
+      "method": "TKG_soft",
+      "old_strict": 0.5769549027720314,
+      "new_strict": 0.5771617707902358,
+      "abs_delta": 0.00020686801820435363,
+      "pass": true
+    },
+    {
+      "setting": "FN=.1",
+      "method": "SpikeMem",
+      "old_strict": 0.6768721555647497,
+      "new_strict": 0.6766652875465453,
+      "abs_delta": 0.00020686801820435363,
+      "pass": true
+    },
+    {
+      "setting": "FN=.1",
+      "method": "TKG_hard",
+      "old_strict": 0.6756309474555233,
+      "new_strict": 0.675424079437319,
+      "abs_delta": 0.00020686801820435363,
+      "pass": true
+    },
+    {
+      "setting": "FN=.1",
+      "method": "TKG_soft",
+      "old_strict": 0.622879602813405,
+      "new_strict": 0.6226727347952007,
+      "abs_delta": 0.00020686801820435363,
+      "pass": true
+    },
+    {
+      "setting": "FN=.2",
+      "method": "SpikeMem",
+      "old_strict": 0.6708729830368225,
+      "new_strict": 0.6702523789822094,
+      "abs_delta": 0.0006206040546131719,
+      "pass": true
+    },
+    {
+      "setting": "FN=.2",
+      "method": "TKG_hard",
+      "old_strict": 0.6663218866363261,
+      "new_strict": 0.6659081505999173,
+      "abs_delta": 0.0004137360364088183,
+      "pass": true
+    },
+    {
+      "setting": "FN=.2",
+      "method": "TKG_soft",
+      "old_strict": 0.620190318576748,
+      "new_strict": 0.6199834505585436,
+      "abs_delta": 0.00020686801820435363,
+      "pass": true
+    },
+    {
+      "setting": "FN=.3",
+      "method": "SpikeMem",
+      "old_strict": 0.6650806785270997,
+      "new_strict": 0.6640463384360777,
+      "abs_delta": 0.0010343400910219902,
+      "pass": true
+    },
+    {
+      "setting": "FN=.3",
+      "method": "TKG_hard",
+      "old_strict": 0.6565990897807199,
+      "new_strict": 0.6557716177079024,
+      "abs_delta": 0.0008274720728175256,
+      "pass": true
+    },
+    {
+      "setting": "FN=.3",
+      "method": "TKG_soft",
+      "old_strict": 0.6170872983036823,
+      "new_strict": 0.6166735622672734,
+      "abs_delta": 0.0004137360364088183,
+      "pass": true
+    },
+    {
+      "setting": "diag=.1",
+      "method": "SpikeMem",
+      "old_strict": 0.6696317749275962,
+      "new_strict": 0.6679768307819611,
+      "abs_delta": 0.001654944145635051,
+      "pass": true
+    },
+    {
+      "setting": "diag=.1",
+      "method": "TKG_hard",
+      "old_strict": 0.630947455523376,
+      "new_strict": 0.6307405875051717,
+      "abs_delta": 0.00020686801820435363,
+      "pass": true
+    },
+    {
+      "setting": "diag=.1",
+      "method": "TKG_soft",
+      "old_strict": 0.605709557302441,
+      "new_strict": 0.605709557302441,
+      "abs_delta": 0.0,
+      "pass": true
+    },
+    {
+      "setting": "diag=.2",
+      "method": "SpikeMem",
+      "old_strict": 0.6559784857261067,
+      "new_strict": 0.6541166735622673,
+      "abs_delta": 0.0018618121638394047,
+      "pass": true
+    },
+    {
+      "setting": "diag=.2",
+      "method": "TKG_hard",
+      "old_strict": 0.5661977658254034,
+      "new_strict": 0.5657840297889947,
+      "abs_delta": 0.00041373603640870726,
+      "pass": true
+    },
+    {
+      "setting": "diag=.2",
+      "method": "TKG_soft",
+      "old_strict": 0.589573851882499,
+      "new_strict": 0.5889532478278858,
+      "abs_delta": 0.0006206040546131719,
+      "pass": true
+    },
+    {
+      "setting": "diag=.3",
+      "method": "SpikeMem",
+      "old_strict": 0.6379809681423252,
+      "new_strict": 0.6352916839056681,
+      "abs_delta": 0.0026892842366570413,
+      "pass": false
+    },
+    {
+      "setting": "diag=.3",
+      "method": "TKG_hard",
+      "old_strict": 0.5002068680182044,
+      "new_strict": 0.49958626396359124,
+      "abs_delta": 0.0006206040546131164,
+      "pass": true
+    },
+    {
+      "setting": "diag=.3",
+      "method": "TKG_soft",
+      "old_strict": 0.5577161770790235,
+      "new_strict": 0.5573024410426148,
+      "abs_delta": 0.00041373603640870726,
+      "pass": true
+    },
+    {
+      "setting": "clean",
+      "method": "dense_k8",
+      "old_strict": 0.2503,
+      "new_strict": 0.2501034340091022,
+      "abs_delta": 0.00019656599089784565,
+      "pass": true
+    },
+    {
+      "setting": "clean",
+      "method": "bm25_k8",
+      "old_strict": 0.2286,
+      "new_strict": 0.2341745966073645,
+      "abs_delta": 0.005574596607364507,
+      "pass": false
+    },
+    {
+      "setting": "clean",
+      "method": "recency_dedup_k8",
+      "old_strict": 0.2913,
+      "new_strict": 0.29230450972279687,
+      "abs_delta": 0.0010045097227968647,
+      "pass": true
+    },
+    {
+      "setting": "clean",
+      "method": "Iterative",
+      "old_strict": 0.2503,
+      "new_strict": 0.2503103020273066,
+      "abs_delta": 1.0302027306563488e-05,
+      "pass": true
+    },
+    {
+      "setting": "clean",
+      "method": "PPR",
+      "old_strict": 0.0074,
+      "new_strict": 0.008688456764584195,
+      "abs_delta": 0.0012884567645841949,
+      "pass": true
+    }
+  ],
+  "old_source": "/202608/202608/haojiang/SpikeMemV2/g7_full_dev_corrected_summary.json"
+}

@@ -1,0 +1,380 @@
+{
+  "n": 2417,
+  "old_strict": 0.6379809681423252,
+  "new_strict": 0.6352916839056681,
+  "candidate_output_classes": {
+    "identical": 2392,
+    "same_candidates_output_changed": 7,
+    "candidate_set_changed": 18
+  },
+  "score_changed_n": 16,
+  "score_delta_sum": -6.5,
+  "changed_rows": [
+    {
+      "qid": "mq1001",
+      "category": "same_candidates_output_changed",
+      "old_score": 0.5,
+      "new_score": 1.0,
+      "old_candidates": [
+        "Amblin Entertainment~q1001#2",
+        "Toronto Coach Terminal"
+      ],
+      "new_candidates": [
+        "Amblin Entertainment~q1001#2",
+        "Toronto Coach Terminal"
+      ],
+      "old_forward": "Amblin Entertainment~q1001#2",
+      "old_reverse": "Toronto Coach Terminal",
+      "new_forward": "Toronto Coach Terminal",
+      "new_reverse": "Toronto Coach Terminal",
+      "new_reader_outputs": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq1314",
+      "category": "candidate_set_changed",
+      "old_score": 0.5,
+      "new_score": 1.0,
+      "old_candidates": [
+        "Richland County",
+        "Wellington~q1314#3"
+      ],
+      "new_candidates": [
+        "Richland County",
+        "Port Blair~q1314#3"
+      ],
+      "old_forward": "Richland County",
+      "old_reverse": "Wellington~q1314#3",
+      "new_forward": "Richland County",
+      "new_reverse": "Richland County",
+      "new_reader_outputs": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "qid": "mq1395",
+      "category": "same_candidates_output_changed",
+      "old_score": 0.5,
+      "new_score": 1.0,
+      "old_candidates": [
+        "Terringzean Castle, East Ayrshire~q1395#2",
+        "Casa Loma"
+      ],
+      "new_candidates": [
+        "Terringzean Castle, East Ayrshire~q1395#2",
+        "Casa Loma"
+      ],
+      "old_forward": "Terringzean Castle, East Ayrshire~q1395#2",
+      "old_reverse": "Casa Loma",
+      "new_forward": "Casa Loma",
+      "new_reverse": "Casa Loma",
+      "new_reader_outputs": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq1660",
+      "category": "candidate_set_changed",
+      "old_score": 1.0,
+      "new_score": 0.5,
+      "old_candidates": [
+        "Saxony-Anhalt",
+        "Ambroise-Marie Carré~q1660#3"
+      ],
+      "new_candidates": [
+        "Saxony-Anhalt",
+        "Pope Paul VI~q1660#3"
+      ],
+      "old_forward": "Saxony-Anhalt",
+      "old_reverse": "Saxony-Anhalt",
+      "new_forward": "Saxony-Anhalt",
+      "new_reverse": "Pope Paul VI~q1660#3",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq175",
+      "category": "same_candidates_output_changed",
+      "old_score": 1.0,
+      "new_score": 0.5,
+      "old_candidates": [
+        "Francisco Guterres",
+        "Estanislau da Silva~q175#2"
+      ],
+      "new_candidates": [
+        "Francisco Guterres",
+        "Estanislau da Silva~q175#2"
+      ],
+      "old_forward": "Francisco Guterres",
+      "old_reverse": "Francisco Guterres",
+      "new_forward": "Francisco Guterres",
+      "new_reverse": "Estanislau da Silva~q175#2",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq180",
+      "category": "candidate_set_changed",
+      "old_score": 1.0,
+      "new_score": 0.0,
+      "old_candidates": [
+        "California Golden Seals~q180#2",
+        "Pete Rose"
+      ],
+      "new_candidates": [
+        "California Golden Seals~q180#2",
+        "Vermont Lady Voltage~q180#2"
+      ],
+      "old_forward": "Pete Rose",
+      "old_reverse": "Pete Rose",
+      "new_forward": "California Golden Seals~q180#2",
+      "new_reverse": "Vermont Lady Voltage~q180#2",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq1814",
+      "category": "same_candidates_output_changed",
+      "old_score": 1.0,
+      "new_score": 0.5,
+      "old_candidates": [
+        "Princess Alexia of the Netherlands~q1814#1",
+        "Queen dowager Clarisse Renaldi"
+      ],
+      "new_candidates": [
+        "Princess Alexia of the Netherlands~q1814#1",
+        "Queen dowager Clarisse Renaldi"
+      ],
+      "old_forward": "Queen dowager Clarisse Renaldi",
+      "old_reverse": "Queen dowager Clarisse Renaldi",
+      "new_forward": "Princess Alexia of the Netherlands~q1814#1",
+      "new_reverse": "Queen dowager Clarisse Renaldi",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq2386",
+      "category": "same_candidates_output_changed",
+      "old_score": 1.0,
+      "new_score": 0.5,
+      "old_candidates": [
+        "22",
+        "Black Death~q2386#2"
+      ],
+      "new_candidates": [
+        "22",
+        "Black Death~q2386#2"
+      ],
+      "old_forward": "22",
+      "old_reverse": "22",
+      "new_forward": "22",
+      "new_reverse": "Black Death~q2386#2",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq2394",
+      "category": "candidate_set_changed",
+      "old_score": 1.0,
+      "new_score": 0.0,
+      "old_candidates": [
+        "The Dollar~q2394#2",
+        "February 1989"
+      ],
+      "new_candidates": [
+        "The Dollar~q2394#2",
+        "Lonesome Standard Time~q2394#2"
+      ],
+      "old_forward": "February 1989",
+      "old_reverse": "February 1989",
+      "new_forward": "The Dollar~q2394#2",
+      "new_reverse": "Lonesome Standard Time~q2394#2",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq347",
+      "category": "candidate_set_changed",
+      "old_score": 1.0,
+      "new_score": 0.5,
+      "old_candidates": [
+        "Saxony-Anhalt",
+        "Abdul Rehman Makki~q347#3"
+      ],
+      "new_candidates": [
+        "Saxony-Anhalt",
+        "Catholic Church in England and Wales~q347#3"
+      ],
+      "old_forward": "Saxony-Anhalt",
+      "old_reverse": "Saxony-Anhalt",
+      "new_forward": "Saxony-Anhalt",
+      "new_reverse": "Catholic Church in England and Wales~q347#3",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq367",
+      "category": "candidate_set_changed",
+      "old_score": 1.0,
+      "new_score": 0.0,
+      "old_candidates": [
+        "Gmina Ujsoły~q367#3",
+        "Green Bay"
+      ],
+      "new_candidates": [
+        "Gmina Ujsoły~q367#3",
+        "Bondary~q367#3"
+      ],
+      "old_forward": "Green Bay",
+      "old_reverse": "Green Bay",
+      "new_forward": "Gmina Ujsoły~q367#3",
+      "new_reverse": "Gmina Ujsoły~q367#3",
+      "new_reader_outputs": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "qid": "mq556",
+      "category": "same_candidates_output_changed",
+      "old_score": 0.5,
+      "new_score": 1.0,
+      "old_candidates": [
+        "Dow City, Iowa~q556#3",
+        "Richland County"
+      ],
+      "new_candidates": [
+        "Dow City, Iowa~q556#3",
+        "Richland County"
+      ],
+      "old_forward": "Dow City, Iowa~q556#3",
+      "old_reverse": "Richland County",
+      "new_forward": "Richland County",
+      "new_reverse": "Richland County",
+      "new_reader_outputs": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq57",
+      "category": "same_candidates_output_changed",
+      "old_score": 1.0,
+      "new_score": 0.5,
+      "old_candidates": [
+        "rises in northern Minnesota and meanders slowly southwards",
+        "Beaurivage River~q57#2"
+      ],
+      "new_candidates": [
+        "rises in northern Minnesota and meanders slowly southwards",
+        "Beaurivage River~q57#2"
+      ],
+      "old_forward": "rises in northern Minnesota and meanders slowly southwards",
+      "old_reverse": "rises in northern Minnesota and meanders slowly southwards",
+      "new_forward": "rises in northern Minnesota and meanders slowly southwards",
+      "new_reverse": "Beaurivage River~q57#2",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq602",
+      "category": "candidate_set_changed",
+      "old_score": 0.5,
+      "new_score": 0.0,
+      "old_candidates": [
+        "Thailand~q602#3",
+        "The dynasty regrouped and defeated the Portuguese"
+      ],
+      "new_candidates": [
+        "Thailand~q602#3",
+        "Patani United Liberation Organisation~q602#3"
+      ],
+      "old_forward": "Thailand~q602#3",
+      "old_reverse": "The dynasty regrouped and defeated the Portuguese",
+      "new_forward": "Thailand~q602#3",
+      "new_reverse": "Patani United Liberation Organisation~q602#3",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq78",
+      "category": "candidate_set_changed",
+      "old_score": 1.0,
+      "new_score": 0.0,
+      "old_candidates": [
+        "Super Mario Bros. 2~q78#2",
+        "five"
+      ],
+      "new_candidates": [
+        "Super Mario Bros. 2~q78#2",
+        "WWE 2K18~q78#2"
+      ],
+      "old_forward": "five",
+      "old_reverse": "five",
+      "new_forward": "Super Mario Bros. 2~q78#2",
+      "new_reverse": "WWE 2K18~q78#2",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    },
+    {
+      "qid": "mq861",
+      "category": "candidate_set_changed",
+      "old_score": 1.0,
+      "new_score": 0.0,
+      "old_candidates": [
+        "Languages of the United States~q861#3",
+        "2016"
+      ],
+      "new_candidates": [
+        "Languages of the United States~q861#3",
+        "Languages of Brazil~q861#3"
+      ],
+      "old_forward": "2016",
+      "old_reverse": "2016",
+      "new_forward": "Languages of the United States~q861#3",
+      "new_reverse": "Languages of Brazil~q861#3",
+      "new_reader_outputs": [
+        "A",
+        "A"
+      ]
+    }
+  ],
+  "score_change_breakdown": {
+    "same_candidates_output_changed": {
+      "n": 7,
+      "score_delta_sum": -0.5,
+      "em_contribution": -0.0002068680182043856
+    },
+    "candidate_set_changed": {
+      "n": 9,
+      "score_delta_sum": -6.0,
+      "em_contribution": -0.0024824162184526274
+    }
+  },
+  "same_candidate_prompt_audit": "reports/E1_DIAG3_PROMPT_AUDIT.json",
+  "interpretation": "18 candidate-set changes are attributable to the METHOD-mandated MD5 tie ordering; 7 same-candidate cases have byte-identical reader prompts but different fresh Qwen choices. Both are genuine changes, not scoring normalization."
+}
