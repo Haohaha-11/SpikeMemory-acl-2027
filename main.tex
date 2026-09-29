@@ -1,0 +1,616 @@
+\documentclass[11pt]{article}
+\usepackage[preprint]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\graphicspath{{figures/}}
+
+\newcommand{\goldtwo}{\textsc{gold@}$2$}
+\newcommand{\sm}{\textsc{SpikeMem}}
+
+\title{\sm: A Spiking Associative Memory for Multi-Hop Question Answering 
+over Updated Facts in LLM Agents}
+
+\author{
+Shiteng Lu\textsuperscript{1},
+Hao Jiang\textsuperscript{1},
+Zhanyu Guo\textsuperscript{1},
+Jieyuan Zhang\textsuperscript{2},
+Pengbo Wang\textsuperscript{1},
+Junru Bu\textsuperscript{1},
+Malu Zhang\textsuperscript{2}\thanks{Corresponding author.}
+\\
+\textsuperscript{1}Yingcai Honors College,
+University of Electronic Science and Technology of China
+\\
+\textsuperscript{2}School of Computer Science and Engineering,
+University of Electronic Science and Technology of China
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Long-lived language agents accumulate facts that change, and answering a multi-hop question
+requires not only chaining hops but also choosing the current version of each fact along the chain.
+Existing memories either rely on LLM-issued updates whose evidence can be missing or wrong, or treat
+version selection as a post-retrieval decision that exposes the reader to order-sensitive pairwise
+comparisons. We observe that spiking neural circuits face a structurally similar
+problem---selecting among competing, partially reliable inputs---and solve it with a small set of
+motifs. \sm{} composes three of them into an agent memory: a coincidence threshold gates each hop on
+subject and relation jointly, conduction delays count hops, and winner-take-all competition with
+finite, directed supersede inhibition arbitrates between versions \emph{before} activity propagates to
+the next hop. Because inhibition is finite rather than masking, a fact wrongly marked as expired is
+weakened but not removed. On a MuSiQue-derived benchmark with superseded bridge entities and ten
+settings of update-evidence noise, \sm{} is the most accurate of nine memories in every setting,
+leading retrieval-augmented baselines by $0.35$ or more while calling the reader about a ninth as
+often. Ablations show that version arbitration is indispensable and that finite inhibition is what
+supplies robustness to false expiration signals.
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}
+
+Long-lived language agents accumulate facts that change. A user moves, a company changes its CEO,
+a document is revised. Answering a multi-hop question such as ``Which country is the current
+employer of X's spouse based in?'' then requires two things at every hop: finding the fact that links
+the current entity to the next, and choosing the \emph{current} version when several versions of that
+fact are stored. Agent memory systems address the second requirement with add/update/delete
+operations \citep{chhikara2025mem0} or temporally scoped graph edges \citep{rasmussen2025zep}, but in
+deployment the evidence that one fact supersedes another is itself inferred, and can be missing (a
+stale fact still looks current) or spurious (a current fact looks expired).
+
+Neural circuits face a structurally similar problem---selecting one interpretation among competing,
+partially reliable inputs---and solve it with a small set of motifs: coincidence detection,
+conduction delay, lateral inhibition, and winner-take-all competition
+\citep{shastri1993shruti,maass2000wta}. \sm{} uses these motifs as the design language for an agent
+memory. Each stored fact is a leaky integrate-and-fire (LIF) unit. A fact fires only when its subject
+and relation are activated together, so each hop is a conjunction; conduction delays place the $k$-th
+hop at a known time, so hop depth needs no explicit counter; and facts that fill the same
+(subject, relation) slot compete, with newer versions inhibiting older ones through edges written at
+insertion time. A key design choice is that this inhibition is \emph{finite} rather than masking:
+a fact wrongly marked as expired is weakened, not removed, and can still win when it is the only
+candidate that completes the chain. As we show in \S\ref{sec:ablation}, switching to masking
+inhibition reproduces exactly the accuracy of hard invalidation under false-positive noise, so
+finiteness is what buys robustness.
+
+Because the circuit settles on a single winning chain before read-out, it also sidesteps a problem
+we did not initially set out to solve. A memory that returns two candidate chains forces the reader
+into a pairwise decision that, for current LLM readers, is strongly order-sensitive
+\citep{wang2024fair,zheng2023judge}: $30.5\%$ of the two-chain decisions in our evaluation change
+answer when the presentation order is reversed. A memory that arbitrates internally asks the reader to
+make fewer such decisions. Section~\ref{sec:analysis} quantifies this downstream effect.
+
+We evaluate \sm{} end to end on MuSiQue-derived multi-hop questions with superseded bridge entities,
+ten settings of update-evidence noise, and a sweep over update prevalence, against
+retrieval-augmented, iterative, temporal knowledge-graph, and graph-propagation memories
+(\S\ref{sec:setup}). All methods share one frozen reader and an order-balanced scoring protocol that
+accounts for the reader's position bias. \sm{} leads all baselines in every setting
+(\S\ref{sec:results}), and ablations attribute the margin to version arbitration---indispensable---and
+to finite inhibition---the source of noise robustness (\S\ref{sec:ablation}).
+
+% =====================================================================
+\section{Related work}
+
+\paragraph{Agent memory under updates.}
+Mem0 \citep{chhikara2025mem0} maintains memory through LLM-issued add, update, and delete operations;
+Zep \citep{rasmussen2025zep} stores temporally scoped knowledge-graph edges; LongMemEval
+\citep{wu2025longmemeval} and MemoryAgentBench \citep{hu2026memoryagentbench} evaluate knowledge
+updates, and \citet{yadav2026temporal} show that retaining superseded history without supersession is
+severely damaging. Temporal knowledge-graph QA answers multi-hop questions over time-stamped facts
+\citep{saxena2021cronkgqa}. \sm{} differs in performing arbitration inside the retrieval dynamics, hop
+by hop, and in tolerating noisy supersession evidence through finite inhibition.
+
+\paragraph{Multi-hop retrieval.}
+Iterative retrieve-and-reason interleaves retrieval with chain-of-thought
+\citep{trivedi2023interleaving,press2023measuring}; we compare against a simpler, LLM-free iterative
+retriever that follows one fact per hop. HippoRAG applies personalized PageRank over an entity graph
+\citep{gutierrez2024hipporag}, which we include as a baseline.
+
+\paragraph{Spiking associative memory.}
+Temporal synchrony for variable binding originates with \citet{shastri1993shruti}; winner-take-all
+computation and spike-timing plasticity are classical \citep{maass2000wta,caporale2008stdp}. We claim
+no novelty for these components; the contribution is their composition into an agent memory for
+multi-hop reasoning over updated facts. Spiking graph algorithms have provable advantages in
+neuromorphic hardware cost models \citep{aimone2020neuromorphic}; we do not evaluate on such hardware.
+
+\paragraph{Reader-side position bias.}
+LLM judges and readers prefer candidates by position, and fair comparison requires evaluating both
+orders \citep{wang2024fair,zheng2023judge,shi2024judges}. More retrieved context can also hurt
+\citep{hsia2024ragged,cuconasu2024noise}. We adopt order-balanced scoring throughout, and
+\S\ref{sec:analysis} shows why it matters for comparing memories.
+
+% =====================================================================
+\section{\sm}
+\label{sec:method}
+
+\sm{} stores each fact as a spiking neuron in a graph. When a multi-hop question arrives, the entry
+retriever activates a small set of candidate first-hop facts. Each activated unit integrates input
+from the query and, if its subject and relation are both present, fires and sends excitation along
+its out-edge to the next hop's candidates. At every hop, facts that fill the same slot compete
+through supersede inhibition, so only the version that wins the competition propagates further.
+After a fixed number of hops the circuit settles, and the terminal value of the surviving chain is
+read out---usually without calling the reader at all. Three circuit motifs make this work.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig1.pdf}
+\caption{\sm{} on a three-hop question. (a)~Each fact is a spiking unit that fires only when its
+subject and relation inputs coincide (AND). The two versions of the slot (Ben, employer) compete: the
+newer fact inhibits the older one through a supersede edge written at insertion time, so only the
+current chain propagates and its terminal value is read out without calling the reader. Inhibition is
+finite, so a wrongly expired fact is weakened rather than deleted. (b)~One hop on the simulation time
+axis. Because $\delta_\sigma+\delta_{\text{sup}}=3<\delta_{\text{out}}=6$, arbitration finishes before
+the out-edge fires, so a superseded fact is suppressed before it can propagate. The example is
+illustrative and not drawn from the benchmark.}
+\label{fig:arch}
+\end{figure*}
+
+\paragraph{Memory representation.}
+Memory is a graph of localist fact units $m_i=(s_i,p_i,v_i,d_i,c_i,z_i)$: subject, predicate, value,
+write order, confidence, and validity state. When a write $s\xrightarrow{p}v_{\text{new}}$ fills a
+slot $\sigma=(s,p)$ already holding $v_{\text{old}}$, a directed supersede edge from the new unit to
+the old one is created at write time. Direction is taken from the write stream because read-time
+co-activation is symmetric and cannot identify which version is newer.
+
+\paragraph{Dynamics.}
+Each fact unit is a leaky integrate-and-fire neuron,
+\begin{align}
+V_i(t) = {}& \beta V_i(t-1) + \alpha\,g(q,m_i) \nonumber\\
+ & + \textstyle\sum_j w_{ij}\,s_j(t-\delta_{ij}) \nonumber\\
+ & - \textstyle\sum_j \mu_{ij}\,s_j(t-\delta_{\text{sup}}),
+\end{align}
+firing when $V_i(t)\ge\theta_i$, where $g(q,m_i)$ is query similarity, $w_{ij}$ are excitatory edges
+from upstream facts, and $\mu_{ij}$ are supersede inhibitions.
+
+\paragraph{Conjunctive hop gating.}
+The first motif enforces a conjunction at every hop.
+With single-input postsynaptic peak $A$ and $A<\theta_i<2A$, no single input fires a unit: subject and
+relation activation must coincide within $\tau_c=\ln(\theta_i/A-1)/\ln\beta$, which is positive
+because numerator and denominator are both negative. Each hop is thus an AND over subject and
+relation, which rejects facts that match only one of them. This is the motif that separates \sm{}
+from flat retrieval: a one-shot retriever must find every hop's fact from the question text alone,
+whereas the AND gate lets \sm{} follow bridge entities that do not appear in the question.
+
+\paragraph{Hop counting via conduction delay.}
+The second motif replaces an explicit hop counter with timing.
+A per-hop conduction delay $\delta_h$ places hop-$k$ facts near $k\delta_h$, so a read-out window
+selects chains of the decomposed length and rejects under-length shortcuts.
+
+\paragraph{Version arbitration with finite inhibition.}
+The third motif---and the one that ablations will show is indispensable---handles version competition.
+Facts in the same slot compete through a winner-take-all slot node, and supersede edges inhibit older
+versions. The timing constraint $\delta_\sigma+\delta_{\text{sup}}<\delta_{\text{out}}$ ensures that a
+superseded fact is suppressed \emph{before} its outgoing edge excites the next hop, so arbitration
+happens before propagation rather than after.
+
+Why finite inhibition rather than masking? A masking rule deletes any fact that
+receives supersede inhibition, which works perfectly when the supersede evidence is correct. But
+under false-positive noise---a valid fact erroneously marked as expired---masking permanently removes
+a fact that should have won. Finite inhibition weakens it instead, so that if no competing version
+completes the chain, the weakened fact can still propagate. As we quantify in
+\S\ref{sec:ablation}, this single design choice accounts for the entire gap between \sm{} and hard
+invalidation under false-positive noise.
+
+\paragraph{Arbitrated read-out.}
+When arbitration leaves exactly one complete chain within the hop window, its terminal value is read
+out directly, without calling the reader. When it cannot decide---for instance, when noise has
+removed a supersede edge so that two versions both remain valid---the two earliest complete chains
+are passed to the reader. Under our noise settings this happens for $0$ to $28\%$ of questions.
+
+\paragraph{Implementation.}
+We simulate the network with an event-driven scheduler. The same computations can be executed as an
+event-driven graph search with an explicit AND filter, hop counter, and sparse arbitration; on all
+$24{,}170$ query--setting pairs of our evaluation this produces identical outputs. We therefore
+attribute \sm{}'s behaviour to the computations its circuit performs rather than to spike timing as
+such, and regard the spiking form as the design language and an implementation suited to
+event-driven hardware, which we do not evaluate here.
+
+% =====================================================================
+\section{Experimental setup}
+\label{sec:setup}
+
+\paragraph{Benchmark.}
+We adapt the $2{,}417$ answerable questions of the MuSiQue development split
+\citep{trivedi2022musique}, whose per-hop decompositions give full gold chains of length
+$K\in\{2,3,4\}$ without entity-recognition heuristics. With probability $\rho$ ($0.5$ unless stated)
+a bridge slot is updated: an old value, drawn from a genuine MuSiQue distractor title rather than
+synthesised, is written before the new one, and the gold chain continues from the new value.
+
+\paragraph{Update-evidence noise.}
+Supersede evidence is corrupted in two ways at rates $0.1$, $0.2$, and $0.3$: \emph{false positive}
+(\textsc{fp}), a valid fact is marked expired; \emph{false negative} (\textsc{fn}), a real supersede
+edge is dropped so that stale and current versions both appear valid. Three diagonal settings
+($\textsc{fp}=\textsc{fn}$) and a clean setting give ten configurations. Injection and noise are
+query-scoped, and we verified that neither leaks across questions nor destroys chains by construction
+(Appendix~\ref{sec:selfchecks}).
+
+\paragraph{Entry.}
+All methods enter the graph with the same sparse TF--IDF retriever over the question and entity
+titles, using no gold seed, answer, path, or support annotation (full-dev seed@1 $=0.6856$).
+
+\paragraph{Reader and scoring.}
+A frozen Qwen3-8B reader (greedy decoding, non-thinking mode, at most 16 new tokens) sees the question
+and the rendered candidate chains with write orders, and may answer \texttt{INSUFFICIENT}; it never
+sees gold labels or noise types. A single candidate chain is read out directly. Every two-candidate
+decision is run in both presentation orders and scored as the mean of the two correctness indicators
+\citep{wang2024fair,zheng2023judge}. Retrieval-augmented baselines give the reader a list of $k$ facts,
+each rendered as \texttt{subject | predicate | value (write order d)}; the list is presented in
+descending and in ascending retrieval-score order and the two scores are averaged. All methods are
+scored with the same function, normalized exact match: an answer is correct if, after lower-casing and
+removing punctuation, articles, and extra whitespace, it equals the gold answer or one of its MuSiQue
+aliases; direct read-outs and reader outputs are scored identically. Every number in this paper comes
+from a single from-scratch run of graph construction, retrieval, and reader generation; under strict
+string matching it agrees with an earlier independent run within $0.002$ in $33$ of $35$ compared cells;
+the two larger differences ($0.003$ and $0.006$) come from a deterministic tie-breaking rule adopted for
+the rerun and from a handful of reader outputs that changed for byte-identical prompts.
+Differences use a paired bootstrap over questions with $2{,}000$ resamples.
+
+\paragraph{Baselines.}
+All methods share the $11{,}322$-fact graph and the reader; graph methods also share the entry
+retriever. None was tuned on the evaluation questions.
+\emph{Dense RAG}: the top-$k$ facts by cosine similarity between \texttt{bge-small-en-v1.5}
+embeddings of the question and the facts.
+\emph{BM25 RAG}: the top-$k$ facts by BM25 ($k_1=1.5$, $b=0.75$).
+\emph{Recency-deduplicated RAG}: the dense top-$2k$, keeping only the currently valid fact with the
+latest write order in each (subject, predicate) slot, then the top $k$; it uses the same
+(noisy) validity and write-order information as \sm{}.
+We report $k=8$ in the main text and $k=4$ in Appendix~\ref{sec:k4}.
+\emph{Iterative}: an LLM-free hop-by-hop retriever that follows the best-matching fact from the
+current entity at each hop and uses no validity or supersede information.
+\emph{Temporal KG (hard / soft)}: one-shot search over a temporally scoped graph in the style of
+\citet{rasmussen2025zep}, with hard invalidation (expired facts removed) or soft invalidation
+(expired facts down-weighted), enumerating up to two complete chains from a top-16 pool.
+\emph{Personalized PageRank}: sparse PPR over the fact graph in the style of
+\citet{gutierrez2024hipporag}.
+
+% =====================================================================
+\section{Results}
+\label{sec:results}
+
+\begin{table*}[t]
+\centering
+\caption{Normalized exact match on MuSiQue full-dev ($N=2{,}417$ per cell), text entry, $\rho=0.5$,
+order-balanced. RAG baselines use $k=8$. Bold marks the best method per row. Paired 95\% bootstrap
+intervals for \sm{} minus each baseline exclude zero in every row for all RAG, iterative, and PPR
+baselines (smallest lower bound $0.320$), in every row for soft invalidation (smallest $0.041$), and in
+eight of the nine noisy rows for hard invalidation (the exception is \textsc{fn}$=0.1$, $+0.001$).}
+\label{tab:main}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Noise & Dense & BM25 & Rec.-dedup & Iterative & PPR & TKG hard & TKG soft & \sm{} \\
+\midrule
+clean            & .2633 & .2472 & .3070 & .2503 & .0190 & \textbf{.6856} & .6241 & \textbf{.6856} \\
+\textsc{fp}$=.1$ & .2633 & .2472 & .3018 & .2503 & .0190 & .6347 & .6059 & \textbf{.6754} \\
+\textsc{fp}$=.2$ & .2633 & .2472 & .2962 & .2503 & .0190 & .5925 & .5910 & \textbf{.6659} \\
+\textsc{fp}$=.3$ & .2633 & .2472 & .2923 & .2503 & .0190 & .5445 & .5772 & \textbf{.6558} \\
+\textsc{fn}$=.1$ & .2633 & .2472 & .3064 & .2503 & .0190 & .6754 & .6227 & \textbf{.6767} \\
+\textsc{fn}$=.2$ & .2633 & .2472 & .3066 & .2503 & .0190 & .6659 & .6200 & \textbf{.6703} \\
+\textsc{fn}$=.3$ & .2633 & .2472 & .3060 & .2503 & .0190 & .6558 & .6167 & \textbf{.6640} \\
+diag $=.1$       & .2633 & .2472 & .3012 & .2503 & .0190 & .6307 & .6057 & \textbf{.6680} \\
+diag $=.2$       & .2633 & .2472 & .2977 & .2503 & .0190 & .5658 & .5890 & \textbf{.6541} \\
+diag $=.3$       & .2633 & .2472 & .2900 & .2503 & .0190 & .4996 & .5573 & \textbf{.6353} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:main} reports end-to-end accuracy across all ten noise settings. Two patterns stand
+out: the gap between memories that follow bridges and those that do not, and the gap between
+different strategies for handling version competition under noise.
+
+\paragraph{Following bridges is necessary but not sufficient.}
+Retrieval-augmented baselines and personalized PageRank never exceed $0.31$, regardless of noise
+setting---their scores are flat across all rows of Table~\ref{tab:main} because they ignore
+validity information entirely. The bottleneck is structural: a one-shot retriever must find every
+hop's fact from the question text alone, and bridge entities introduced by updates do not appear in
+the question. Even recency-deduplicated RAG, which uses the same validity and write-order
+information available to \sm{}, gains only about $0.04$ over plain dense retrieval, because
+deduplication cannot help a retriever that never reaches the bridge in the first place. Sparse PPR
+scores $0.019$: single-pass diffusion followed by ranking does not enforce the per-hop conjunctions
+these questions require. The iterative retriever does follow bridges hop by hop, but without
+version arbitration it propagates from whichever version it encounters first, whether current or
+stale.
+
+\paragraph{Version arbitration under noise separates \sm{} from temporal KG memories.}
+The temporal KG baselines do follow bridges and do arbitrate versions, and on clean data hard
+invalidation ties \sm{} at $0.6856$---both answer every question their entry retriever reaches. The
+difference emerges under noise, and it tracks the kind of noise in exactly the way the design
+predicts.
+
+Under false-positive noise, where valid facts are erroneously marked expired, hard invalidation
+permanently removes facts that should have won; its accuracy falls from $0.6856$ to $0.5445$ at
+\textsc{fp}$=0.3$, a loss of $0.141$. \sm{}'s finite inhibition weakens those facts instead of
+deleting them, so it loses only $0.030$ over the same range. Soft invalidation keeps falsely
+expired facts (as \sm{} does), so it degrades less than hard---but it trails \sm{} for a different
+reason that \S\ref{sec:analysis} isolates: it passes more candidate chains to the reader, whose
+order-sensitive decisions cost accuracy.
+
+Under false-negative noise, where real supersede edges are dropped, both hard invalidation and \sm{}
+lose the information they would need to distinguish versions; the margins are small ($+0.001$ to
+$+0.008$). In diagonal settings, where both kinds of noise are present, the false-positive effect
+dominates and \sm{} leads by up to $+0.136$.
+
+Across all settings, \sm{} degrades most gracefully: from clean to diagonal $0.3$ it loses $0.050$,
+against $0.186$ for hard and $0.067$ for soft invalidation.
+
+\paragraph{Where the remaining error is.}
+On clean data \sm{} answers every question it enters correctly: its $0.6856$ equals the entry
+retriever's seed@1, and all $760$ misses are questions whose entry fact was not retrieved. Under noise
+its gold coverage stays between $0.672$ and $0.686$ while that of hard invalidation falls to $0.517$.
+The entry retriever, not the memory, is \sm{}'s main limitation on this benchmark.
+
+\subsection{Ablations}
+\label{sec:ablation}
+
+\begin{table}[t]
+\centering
+\caption{Ablations of \sm{} (order-balanced EM, $N=2{,}417$ per cell).}
+\label{tab:ablation}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Variant & clean & \textsc{fp}$=.3$ & \textsc{fn}$=.3$ \\
+\midrule
+\sm{} (full)             & .6856 & .6558 & .6640 \\
+$-$ arbitration          & .2503 & .2503 & .2503 \\
+masking inhibition       & .6856 & .5445 & .6640 \\
+top-2 read-out           & .6856 & .6558 & .6640 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:ablation} strips components one at a time, and the pattern that emerges is a clear
+hierarchy of necessity.
+
+\emph{Removing arbitration} collapses accuracy to $0.2503$ in all three settings---the same score as
+the iterative baseline, including on clean data where half the bridges have been updated. Without
+version competition, stale and current branches both propagate, and the chain that completes first
+need not be the current one. Arbitration is indispensable.
+
+\emph{Switching to masking inhibition} reveals where robustness comes from. On clean data and under
+false-negative noise, masking is equivalent to \sm{}---both settings provide correct or absent
+supersede signals, so deleting an inhibited fact costs nothing. But under \textsc{fp}$=0.3$, masking
+falls to $0.5445$, exactly the accuracy of hard invalidation in Table~\ref{tab:main}: falsely
+expired facts are permanently removed, and the chain they would have completed is lost. The entire
+gap between \sm{} and hard invalidation under false-positive noise ($+0.111$) is accounted for by
+this single design choice---finite versus masking inhibition.
+
+\emph{Forcing top-2 read-out}---always passing two chains to the reader when both exist---leaves
+accuracy unchanged, because after arbitration a second complete chain exists only where \sm{} already
+defers to the reader. What matters for read-out is not a policy of sending two chains, but whether
+arbitration has already settled the competition; \S\ref{sec:analysis} makes this point from the
+opposite direction.
+
+\subsection{Cost}
+\label{sec:cost}
+
+\begin{table}[t]
+\centering
+\caption{Cost per question, averaged over the ten settings. Reader calls count both presentation
+orders. Retrieval time is CPU wall-clock (median / p95, ms) on a $311$-question sample, excluding
+embedding computation. Edge accesses count graph edges touched during search.}
+\label{tab:cost}
+\small
+\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Method & Reader & Tokens & ms & Edges \\
+\midrule
+Dense RAG ($k{=}8$)  & 2.000 & 607.2 & 3.2 / 27.0 & --- \\
+BM25 RAG ($k{=}8$)   & 2.000 & 607.0 & 192.4 / 259.1 & --- \\
+Rec.-dedup ($k{=}8$) & 2.000 & 604.1 & 3.2 / 27.0 & --- \\
+Iterative            & 0     & 0     & 0.02 / 0.04 & 2.3 \\
+PPR                  & 0     & 0     & 1.2 / 1.6 & 6{,}294.2 \\
+TKG hard             & 0.107 & 29.7  & 16.6 / 19.9 & 11{,}322 \\
+TKG soft             & 0.882 & 244.8 & 21.2 / 23.5 & 11{,}322 \\
+\sm{}                & 0.225 & 62.7  & 11.2 / 141.9 & 26.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:cost} reports cost. \sm{} calls the reader $0.225$ times per question on average,
+about a ninth of the retrieval-augmented baselines and a quarter of soft invalidation; its prompts
+are correspondingly short. Because it propagates only from facts that fire, it touches $26.1$ graph
+edges per question, against the whole $11{,}322$-edge graph for the one-shot temporal-KG search and
+$6{,}294$ relaxations for PPR. Its median retrieval time ($11.2$\,ms) is below that of the
+temporal-KG search and above dense lookup, with a long tail ($141.9$\,ms at p95) because our
+implementation simulates the network in Python. These are measurements of our implementations rather
+than calibrated costs; the event-driven graph search equivalent to \sm{} performs the same edge
+accesses.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig3_rho_scan.pdf}
+\caption{Normalized, order-balanced exact match as the prevalence $\rho$ of superseded bridge entities varies
+($\textsc{fp}=\textsc{fn}=0.3$, text entry, $N=800$). Rebuilding the graph at each $\rho$ also changes
+entry difficulty (seed@1 moves from $0.7225$ at $\rho=0$ to $0.7000$ at $\rho=0.75$), so we compare
+methods within each $\rho$ rather than reading the absolute slope.}
+\label{fig:rho}
+\end{figure}
+
+\subsection{Prevalence of updates}
+
+Figure~\ref{fig:rho} varies the fraction of updated bridge slots under combined noise. All methods
+coincide at $\rho=0$, where there is nothing to arbitrate, and the gap between \sm{} and both
+temporal-KG variants widens as updates become more common, with hard invalidation falling fastest.
+The benefit of in-search arbitration therefore grows with the rate at which memory changes.
+
+% =====================================================================
+\section{Where does the margin over soft invalidation come from?}
+\label{sec:analysis}
+
+Soft invalidation keeps falsely expired facts, as \sm{} does, yet it trails \sm{} in every setting.
+The reason is not what each memory knows but what each memory hands the reader.
+
+Soft invalidation enumerates two complete chains for
+$40$--$44\%$ of questions in every setting, forcing the reader to choose between them. \sm{}
+arbitrates inside the memory and passes two chains for at most $28\%$ of questions, and for none on
+clean data. To isolate this effect, we take the \textsc{fp}$=0.3$ setting on an $N=800$ slice with
+the historical annotated entry and give the soft baseline the full graph as its pool, which brings
+its gold coverage (\goldtwo{}) to \sm{}'s $0.975$. \sm{} still scores $0.9519$ against $0.8988$
+(paired 95\% CI of the difference $[0.0425, 0.0644]$). The difference is concentrated in $343$
+questions where both memories contain the identical gold fact path: \sm{} returns that chain alone,
+soft invalidation returns it together with one distractor chain.
+
+\begin{table}[t]
+\centering
+\caption{Read-out intervention on the $343$ questions where \sm{} and soft invalidation share the gold
+chain (\textsc{fp}$=0.3$, full graph, $N=800$ slice). Order-balanced EM; splits are questions whose
+answer depends on presentation order. Normalized EM.}
+\label{tab:readout}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Read-out & Chains & EM & Splits \\
+\midrule
+\sm{} (arbitrated)             & 1 & $1.000$ & 0 \\
+$+$ chain with same answer     & 2 & $1.000$ & 0 \\
+$+$ baseline's distractor      & 2 & $.8761$ & 85 \\
+$+$ most attractive distractor & 2 & $.8630$ & 94 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:readout} makes this precise by artificially adding a distractor chain to \sm{}'s
+output on exactly these $343$ questions. Adding a second chain that agrees on the answer costs
+nothing; adding the soft baseline's actual distractor reproduces the baseline's accuracy: in $85$
+of the $343$ the reader's answer flips with presentation order, costing exactly half a point each,
+$85\times0.5/800=0.0531$. The reader never consistently prefers the wrong chain---it simply picks
+whichever chain is presented first.
+
+For memory design, the implication is that settling competition inside the memory is itself a source
+of end-to-end accuracy with current readers. It also follows that retrieval coverage alone, such as
+\goldtwo{}, understates differences between memories, and we recommend reporting candidate
+cardinality and reader-invocation rate alongside it.
+
+% =====================================================================
+\section{Conclusion}
+
+\sm{} builds an agent memory from three spiking circuit motifs---coincidence gating, conduction
+delay, and winner-take-all arbitration with finite, write-time supersede inhibition---and uses them
+to perform version arbitration inside the search process, hop by hop. The experimental record
+attributes its margin to two sources: version arbitration itself, without which accuracy collapses
+to the iterative baseline, and the finiteness of inhibition, which preserves facts that were
+wrongly marked as expired.
+
+A broader design lesson emerges from the analysis of read-out. Current LLM readers are strongly
+order-sensitive in pairwise decisions, and a memory that settles competition before read-out spares
+the reader those decisions entirely. This suggests that for any agent memory, not just spiking ones,
+moving arbitration earlier in the pipeline---from reader-side to retrieval-side---is worth exploring
+as a general strategy, especially as memories grow and the number of competing versions increases.
+
+On this benchmark, \sm{}'s remaining errors are almost entirely due to the entry retriever, not the
+memory. Improving entry---whether through denser retrieval, query expansion, or entity
+linking---is the most direct path to higher end-to-end accuracy.
+
+\section*{Limitations}
+
+Updates and supersession noise are injected into MuSiQue rather than naturally occurring, and the fact
+graph is built from its annotated decompositions; results on naturally updated memories may differ.
+Retrieval-augmented baselines must extract the answer from a list of facts in free text, whereas graph
+memories often return an entity directly; normalized matching with aliases reduces but may not
+remove this asymmetry. Our iterative baseline is LLM-free, and LLM-driven iterative retrieval
+\citep{trivedi2023interleaving} and LLM-maintained memories \citep{chhikara2025mem0} are not included.
+Results use one reader, Qwen3-8B; the read-out component of the margin depends
+on that reader's order sensitivity and may shrink for readers that adjudicate pairs reliably. The
+reader never used its \texttt{INSUFFICIENT} option even when neither candidate was correct
+(Appendix~\ref{sec:abstain}), so abstention is not an effective safeguard in this pipeline. Because
+\sm{} is equivalent to an event-driven graph search with the same components, we make no claim that
+spike timing itself improves accuracy, and we did not measure energy or latency on neuromorphic
+hardware. In separate exploratory work on FactConsolidation-MH \citep{hu2026memoryagentbench}, a
+second spiking design that bridged hops without an LLM did not reach the coverage of an LLM-bridged
+pipeline; \sm{}'s design should not be assumed to transfer to benchmarks where bridging between hops,
+rather than version arbitration, is the bottleneck.
+
+\bibliography{refs}
+
+\appendix
+
+\section{Retrieval-augmented baselines at $k=4$ and by order}
+\label{sec:k4}
+
+\begin{table}[h]
+\centering
+\caption{RAG baselines at $k=4$ (normalized, order-balanced EM, $N=2{,}417$), and the effect of presentation order
+at $k=8$ on clean data.}
+\label{tab:k4}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Noise & Dense & BM25 & Rec.-dedup \\
+\midrule
+clean            & .1903 & .1665 & .2389 \\
+\textsc{fp}$=.3$ & .1903 & .1665 & .2294 \\
+\textsc{fn}$=.3$ & .1903 & .1665 & .2377 \\
+diag $=.3$       & .1903 & .1665 & .2245 \\
+\midrule
+$k{=}8$ clean, desc. & .2842 & .2561 & .3326 \\
+$k{=}8$ clean, asc.  & .2424 & .2383 & .2813 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $k=4$ every retrieval-augmented baseline is lower than at $k=8$. Presenting facts in descending
+score order is better than ascending for all three, by $0.02$ to $0.05$, consistent with the
+position sensitivity observed for chain-level decisions.
+
+\section{Benchmark self-checks}
+\label{sec:selfchecks}
+
+\paragraph{Query-scoped injection.}
+Because MuSiQue entities are shared across questions, an update injected for one question could alter
+retrieval for others. We scope both staleness information and predicates to their question and check
+the $878$ questions that injection did not touch: their fraction, $0.3633$, matches its analytic value
+$0.3586$, and on them every graph memory scores exactly the entry retriever's seed@1 on that subset,
+$0.6891$, in all ten settings.
+Neither injection nor noise leaks across questions.
+
+\paragraph{Finite inhibition.}
+If noise deterministically destroyed any chain it touched, every method would score the probability
+that no bridge was touched and all methods would tie; with chain-length mixture weights and per-bridge
+noise rate $p$, that probability is $\mathbb{E}_K[(1-\rho p)^{K-1}]$. \sm{} and our benchmark therefore
+use finite inhibition, under which noise is recoverable, and the masking ablation in
+Table~\ref{tab:ablation} shows the cost of the alternative.
+
+\section{Order sensitivity of the reader}
+\label{sec:flips}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig4_order_flip.pdf}
+\caption{Fraction of two-chain reader decisions whose answer changes when the presentation order is
+reversed, by setting and graph memory (no bar: the memory made no two-chain decision in that
+setting). Every change is the reader selecting the first-presented chain in both orders.}
+\label{fig:flip}
+\end{figure}
+
+Figure~\ref{fig:flip} shows the order-flip rate across settings. Over the $14{,}293$ two-chain
+decisions made by the three graph memories in Table~\ref{tab:main}, $4{,}365$ ($30.5\%$) change answer
+under reversal, with per-method, per-setting rates between $0.28$ and $0.41$. In every one of them the
+reader selects the first-presented chain in both orders. Of the $13{,}716$ decisions with a gold chain
+present, $9{,}768$ are correct in both orders, $3{,}948$ are order-dependent, and none selects the same
+wrong answer in both orders. A fixed presentation order can therefore bias
+a comparison between memories in either direction, which is why all numbers in this paper are
+order-balanced.
+
+\section{Abstention}
+\label{sec:abstain}
+
+On the full-dev \textsc{fp}$=0.3$ soft-invalidation run, $72$ two-chain cases contain no correct
+answer in either candidate; the reader abstains in none of them, in either order. The same holds for
+$22$ cases under \textsc{fn}$=0.3$ and $113$ under diagonal $0.3$. This agrees with prior findings
+that offering an abstention option does not by itself produce abstention.
+
+\end{document}
